@@ -1,0 +1,109 @@
+# Serbian translation for shutter
+# Copyright (c) 2012 Rosetta Contributors and Canonical Ltd 2012
+# This file is distributed under the same license as the shutter package.
+# Мирослав Николић <miroslavnikolic@rocketmail.com>, 2016.
+msgid ""
+msgstr ""
+"Project-Id-Version: shutter\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2011-11-20 21:47+0100\n"
+"PO-Revision-Date: 2016-02-05 14:12+0000\n"
+"Last-Translator: Мирослав Николић <miroslavnikolic@rocketmail.com>\n"
+"Language-Team: Serbian <gnom@prevod.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2020-06-08 09:52+0000\n"
+"X-Generator: Launchpad (build ef9fc486e875d54078fa61cf91e898b895125d89)\n"
+"Language: sr\n"
+
+#: translate_tmp:45
+msgid "Upload screenshots into your Dropbox"
+msgstr "Отпремите снимке екрана у вашу Отпремну кутију"
+
+#: translate_tmp:123
+msgid "There was an error receiving the authentication URL."
+msgstr "Дошло је до грешке пријема адресе потврђивања идентитета."
+
+#: translate_tmp:128
+msgid ""
+"Please click on the button below to authorize with Dropbox. Press 'Apply' "
+"when you are done."
+msgstr ""
+"Притисните на дугме испод да се пријавите на Отпремну кутију. Притисните "
+"„Примени“ када завршите."
+
+#: translate_tmp:129
+msgid "Authorize with Dropbox"
+msgstr "Овласти са Пријемном кутијом"
+
+#: translate_tmp:132
+msgid "Authorize"
+msgstr "Овласти"
+
+#: translate_tmp:142
+msgid "There was an error authenticating with Dropbox."
+msgstr ""
+"Дошло је до грешке приликом потврђивања идентитета са Пријемном кутијом."
+
+#: translate_tmp:212
+msgid ""
+"Maybe you or Dropbox revoked or expired an access token. Please close this "
+"dialog and try again. Your account will be re-authenticated the next time "
+"you upload a file."
+msgstr ""
+"Можда сте ви или Пријемна кутија опозвали или је истекао приступни прстен. "
+"Затворите ово прозорче и пробајте поново. Идентитет вашег налога биће "
+"потврђен када следећи пут отпремите датотеку."
+
+#: translate_tmp:44
+msgid "Upload screenshots to imagebanana.com"
+msgstr "Отпреми снимке екрана на „imagebanana.com“"
+
+#: translate_tmp:44
+msgid "ImageShack is providing free image hosting"
+msgstr "„ImageShack“ обезбеђује бесплатно удомљавање слика"
+
+#: translate_tmp:44
+msgid ""
+"Imgur is used to share photos with social networks and online communities, "
+"and has the funniest pictures from all over the Internet"
+msgstr ""
+"Имгур се користи за дељење фотографија преко друштвених мрежа и заједница на "
+"мрежи, и садржи најсмешније слике са свих страна интернета."
+
+#: translate_tmp:44
+msgid ""
+"imm.io is a one-click easy image sharer, perfect if you want to upload an "
+"image to show your friends or link from other sites"
+msgstr ""
+"„imm.io“ је једноставно решење за дељење слика. Савршено уколико желите да "
+"отпремите слике које желите да покажете пријатељима или да поделите на "
+"другој веб страници."
+
+#: translate_tmp:44
+msgid "Upload screenshots to itmages.com"
+msgstr "Отпремите снимке екрана на „itmages.com“"
+
+#: translate_tmp:45
+msgid "Minus is the simplest free file sharing platform online"
+msgstr ""
+"Минус је једноставна бесплатна платформа за дељење слика преко мреже."
+
+#: translate_tmp:44
+msgid "Upload screenshots to ompldr.org"
+msgstr "Отпремите снимке екрана на „ompldr.org“"
+
+#: translate_tmp:44
+msgid "Upload screenshots to pix.toile-libre.org"
+msgstr "Отпремите снимке екрана на „pix.toile-libre.org“"
+
+#: translate_tmp:45
+msgid "TwitPic lets you share media on Twitter in real-time"
+msgstr ""
+"Твитпик омогућава дељење мултимедијалног садржаја на Твитеру у стварном "
+"времену."
+
+#: translate_tmp:44
+msgid "Upload screenshots to ubuntu-pics.de"
+msgstr "Отпремите слике на „ubuntu-pics.de“"
