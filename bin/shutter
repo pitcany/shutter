@@ -36,7 +36,7 @@ use warnings;
 use diagnostics;
 use 5.10.1;
 
-use Carp::Always;
+# use Carp::Always;  # Optional debug module - uncomment for stack traces
 
 BEGIN {
 	use Glib::Object::Introspection;
@@ -236,7 +236,9 @@ if ($goocanvas) {
 
 #screenshot classes
 require Shutter::Screenshot::Backend;
-require Shutter::Screenshot::SelectorAdvanced;
+if ($goocanvas) {
+	require Shutter::Screenshot::SelectorAdvanced;
+}
 require Shutter::Screenshot::SelectorAuto;
 require Shutter::Screenshot::Wayland;
 require Shutter::Screenshot::Workspace;

@@ -43,10 +43,21 @@ sudo apt install \
     libglib-perl \
     libnet-dbus-perl \
     libfile-which-perl \
+    libfile-copy-recursive-perl \
+    libnumber-bytes-human-perl \
+    libproc-simple-perl \
+    libsort-naturally-perl \
+    libxml-simple-perl \
+    libmoo-perl \
+    liburi-perl \
+    liblocale-gettext-perl \
+    libhttp-message-perl \
     libwnck-3-0 \
     gir1.2-wnck-3.0 \
+    libproc-processtable-perl \
     libgoocanvas-2.0-9 \
     libgoocanvas2-perl \
+    libgoocanvas2-cairotypes-perl \
     libgtk3-imageview-perl \
     xdg-desktop-portal \
     xdg-desktop-portal-gnome
