@@ -34,5 +34,5 @@ jobs:
           
       - name: Run tests
         env:
-          TEST_APP_SHUTTER_PATH: ${{ env.GITHUB_WORKSPACE }}
+          TEST_APP_SHUTTER_PATH: ${{ github.workspace }}
         run: xvfb-run --auto-servernum prove -I share/shutter/resources/modules/ -I t/lib t -r
