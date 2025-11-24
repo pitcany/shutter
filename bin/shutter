@@ -235,6 +235,7 @@ if ($goocanvas) {
 }
 
 #screenshot classes
+require Shutter::Screenshot::Backend;
 require Shutter::Screenshot::SelectorAdvanced;
 require Shutter::Screenshot::SelectorAuto;
 require Shutter::Screenshot::Wayland;
@@ -578,12 +579,13 @@ sub STARTUP {
 	$window->set_default_size(-1, 500);
 
 	#UPDATE WINDOW LIST (signal is connected when GUI is loaded)
-	
-	$x11_supported = 1;
-	
-	if ($ENV{XDG_SESSION_TYPE} eq "wayland") {
-		$x11_supported = 0;
-	}
+
+	# Use the new Backend module for session detection
+	my $capture_backend = Shutter::Screenshot::Backend->instance();
+	$x11_supported = $capture_backend->is_x11() ? 1 : 0;
+
+	print "Session type: " . $capture_backend->get_session_type() . "\n";
+	print "X11 supported: $x11_supported\n";
 
 	if ($x11_supported) {
 		$wnck_screen = Wnck::Screen::get_default();
@@ -937,7 +939,16 @@ sub STARTUP {
 	unless ($x11_supported) {
 		my $wayland_warning = Gtk3::Label->new;
 		$wayland_warning->set_line_wrap(TRUE);
-		$wayland_warning->set_markup($d->get("Wayland support is limited, for more advanced screenshots please switch back to Xorg. Click <a href='https://github.com/shutter-project/shutter/issues/187'>here</a> for details."));
+		my $caps = $capture_backend->get_capabilities();
+		my $warning_text;
+		if ($caps->{gnome_screenshot}) {
+			$warning_text = $d->get("Running on Wayland with gnome-screenshot support. Most features available.");
+		} elsif ($caps->{grim}) {
+			$warning_text = $d->get("Running on Wayland with grim support. Selection and full screen available.");
+		} else {
+			$warning_text = $d->get("Running on Wayland. Some features may be limited. Install gnome-screenshot for better support. Click <a href='https://github.com/shutter-project/shutter/issues/187'>here</a> for details.");
+		}
+		$wayland_warning->set_markup($warning_text);
 		$vbox->pack_start($wayland_warning, FALSE, TRUE, 0);
 	}
 
@@ -990,14 +1001,42 @@ sub STARTUP {
 	$st->{_upload}->set_sensitive(FALSE);
 
 	unless ($x11_supported) {
-		my $tooltip = $d->get("Can't take screenshots without X11 server");
-		for my $name ('_select', '_window', '_menu', '_tooltip') {
-			$st->{$name}->set_sensitive(FALSE);
-			$st->{$name}->set_tooltip_text($tooltip);
+		# On Wayland, set button states based on available capabilities
+		my $caps = $capture_backend->get_capabilities();
+
+		# Selection button - enable if we have gnome-screenshot, grim+slurp, or XDG portal
+		if ($caps->{selection}) {
+			# Selection is available via Wayland tools
+			$st->{_select}->set_sensitive(TRUE);
+			$st->{_select}->set_tooltip_text($d->get("Capture a selected area (Wayland)"));
+		} else {
+			$st->{_select}->set_sensitive(FALSE);
+			$st->{_select}->set_tooltip_text($capture_backend->get_unavailable_reason('selection'));
 		}
-		for my $name ('_full', '_window') {
-			$st->{$name}->set_arrow_tooltip_text($tooltip);
+
+		# Window capture - only available with gnome-screenshot on Wayland
+		if ($caps->{window}) {
+			$st->{_window}->set_sensitive(TRUE);
+			$st->{_window}->set_tooltip_text($d->get("Capture a window (Wayland)"));
+		} else {
+			$st->{_window}->set_sensitive(FALSE);
+			$st->{_window}->set_tooltip_text($capture_backend->get_unavailable_reason('window'));
 		}
+
+		# Menu and tooltip - not supported on Wayland due to security model
+		$st->{_menu}->set_sensitive(FALSE);
+		$st->{_menu}->set_tooltip_text($capture_backend->get_unavailable_reason('menu'));
+
+		$st->{_tooltip}->set_sensitive(FALSE);
+		$st->{_tooltip}->set_tooltip_text($capture_backend->get_unavailable_reason('tooltip'));
+
+		# Full screen is always available via portal or gnome-screenshot
+		$st->{_full}->set_tooltip_text($d->get("Capture full screen (Wayland)"));
+
+		# Disable arrow menus for features that aren't supported
+		my $wayland_tooltip = $d->get("Limited options available on Wayland");
+		$st->{_full}->set_arrow_tooltip_text($wayland_tooltip);
+		$st->{_window}->set_arrow_tooltip_text($wayland_tooltip);
 	}
 
 	#--------------------------------------
@@ -6108,8 +6147,12 @@ sub STARTUP {
 				);
 				$screenshot = $screenshooter->workspace();
 			} else {
-				# TODO: support kwin directly, because it has more features than the xdg portal
-				$screenshot = Shutter::Screenshot::Wayland::xdg_portal($screenshooter);
+				# Use the enhanced Wayland capture with fallback support
+				$screenshooter = {};  # Dummy object for error handling
+				$screenshot = Shutter::Screenshot::Wayland::capture($screenshooter, 'full', {
+					include_cursor => $include_cursor,
+					delay => $delay_value,
+				});
 			}
 
 		#window
@@ -6124,59 +6167,89 @@ sub STARTUP {
 			|| $data eq "tooltip"
 			|| $data eq "tray_tooltip")
 		{
+			my $capture_backend = Shutter::Screenshot::Backend->instance();
 
-			#control some wm related settings
-			my $curr_value = fct_control_wm_settings('start');
+			if (!$x11_supported && $capture_backend->can_capture('window')) {
+				# Use Wayland capture for window mode
+				$screenshooter = {};  # Dummy object for error handling
+				$screenshot = Shutter::Screenshot::Wayland::capture($screenshooter, 'window', {
+					include_cursor => $include_cursor,
+					delay => $delay_value,
+				});
+			} elsif ($x11_supported) {
+				#control some wm related settings
+				my $curr_value = fct_control_wm_settings('start');
 
-			if (defined $extra && $extra) {
+				if (defined $extra && $extra) {
 
-				$screenshooter = Shutter::Screenshot::WindowName->new(
-					$sc,                        $include_cursor,               $delay_value,            $notify_timeout_active->get_active,
-					$border_active->get_active, $winresize_active->get_active, $winresize_w->get_value, $winresize_h->get_value,
-					$hide_time->get_value,      $data,                         $autoshape_active->get_active
-				);
+					$screenshooter = Shutter::Screenshot::WindowName->new(
+						$sc,                        $include_cursor,               $delay_value,            $notify_timeout_active->get_active,
+						$border_active->get_active, $winresize_active->get_active, $winresize_w->get_value, $winresize_h->get_value,
+						$hide_time->get_value,      $data,                         $autoshape_active->get_active
+					);
 
-				$screenshot = $screenshooter->window_find_by_name($extra);
+					$screenshot = $screenshooter->window_find_by_name($extra);
 
+				} else {
+
+					$screenshooter = Shutter::Screenshot::Window->new(
+						$sc,                                 $include_cursor,               $delay_value,                  $notify_timeout_active->get_active,
+						$border_active->get_active,          $winresize_active->get_active, $winresize_w->get_value,       $winresize_h->get_value,
+						$hide_time->get_value,               $data,                         $autoshape_active->get_active, $is_hidden,
+						$visible_windows_active->get_active, $menu_waround_active->get_active
+					);
+
+					$screenshot = $screenshooter->window();
+
+				}
+
+				#control some wm related settings
+				if (defined $curr_value && $curr_value != -1) {
+					fct_control_wm_settings('stop', $curr_value);
+				}
 			} else {
-
-				$screenshooter = Shutter::Screenshot::Window->new(
-					$sc,                                 $include_cursor,               $delay_value,                  $notify_timeout_active->get_active,
-					$border_active->get_active,          $winresize_active->get_active, $winresize_w->get_value,       $winresize_h->get_value,
-					$hide_time->get_value,               $data,                         $autoshape_active->get_active, $is_hidden,
-					$visible_windows_active->get_active, $menu_waround_active->get_active
-				);
-
-				$screenshot = $screenshooter->window();
-
-			}
-
-			#control some wm related settings
-			if (defined $curr_value && $curr_value != -1) {
-				fct_control_wm_settings('stop', $curr_value);
+				# Wayland without window capture capability
+				$screenshooter = {};
+				$screenshooter->{_error_text} = $capture_backend->get_unavailable_reason('window');
+				$screenshot = 9;
 			}
 
 			#selection
 		} elsif ($data eq "select" || $data eq "tray_select") {
+			my $capture_backend = Shutter::Screenshot::Backend->instance();
 
-			if (defined $extra && $extra) {
+			if (!$x11_supported && $capture_backend->can_capture('selection')) {
+				# Use Wayland capture for selection mode
+				$screenshooter = {};  # Dummy object for error handling
+				$screenshot = Shutter::Screenshot::Wayland::capture($screenshooter, 'selection', {
+					include_cursor => $include_cursor,
+					delay => $delay_value,
+				});
+			} elsif ($x11_supported) {
+				if (defined $extra && $extra) {
 
-				my @coords = split(',', $extra);
+					my @coords = split(',', $extra);
 
-				$screenshooter = Shutter::Screenshot::SelectorAuto->new($sc, $include_cursor, $delay_value, $notify_timeout_active->get_active,);
+					$screenshooter = Shutter::Screenshot::SelectorAuto->new($sc, $include_cursor, $delay_value, $notify_timeout_active->get_active,);
 
-				$screenshot = $screenshooter->select_auto($coords[0], $coords[1], $coords[2], $coords[3]);
+					$screenshot = $screenshooter->select_auto($coords[0], $coords[1], $coords[2], $coords[3]);
 
+				} else {
+
+					$screenshooter = Shutter::Screenshot::SelectorAdvanced->new(
+						$sc,                      $include_cursor,        $delay_value,                $notify_timeout_active->get_active,
+						$zoom_active->get_active, $hide_time->get_value,  $as_help_active->get_active, $asel_size3->get_value,
+						$asel_size4->get_value,   $asel_size1->get_value, $asel_size2->get_value,			 $as_confirmation_necessary->get_active,
+					);
+
+					$screenshot = $screenshooter->select_advanced();
+
+				}
 			} else {
-
-				$screenshooter = Shutter::Screenshot::SelectorAdvanced->new(
-					$sc,                      $include_cursor,        $delay_value,                $notify_timeout_active->get_active,
-					$zoom_active->get_active, $hide_time->get_value,  $as_help_active->get_active, $asel_size3->get_value,
-					$asel_size4->get_value,   $asel_size1->get_value, $asel_size2->get_value,			 $as_confirmation_necessary->get_active,
-				);
-
-				$screenshot = $screenshooter->select_advanced();
-
+				# Wayland without selection capture capability
+				$screenshooter = {};
+				$screenshooter->{_error_text} = $capture_backend->get_unavailable_reason('selection');
+				$screenshot = 9;
 			}
 
 			#web
